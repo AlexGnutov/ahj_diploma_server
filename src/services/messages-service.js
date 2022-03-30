@@ -1,7 +1,9 @@
 class MessagesService {
-    constructor() {
+    constructor(updateRouter) {
         this.messages = [];
+        this.updateRouter = updateRouter;
         this.fillMessages();
+        this.updateRouter.initialData = JSON.stringify(this.getContentData());
     }
 
     fillMessages() {
@@ -31,12 +33,14 @@ class MessagesService {
             .filter((message) => message.date < date);
     }
 
+    // Sorts messages by date
     sortByDate(array) {
         return array.sort((a, b) => {
             return a.date - b.date;
         })
     }
 
+    // Returns all messages
     getAll() {
         return this.messages;
     }
@@ -80,15 +84,15 @@ class MessagesService {
     findByType(messageType) {
         return this.messages.filter((message) => message.type === messageType);
     }
-
     findByContent(searchWord) {
         return this.messages.filter((message) => message.content.includes(searchWord));
     }
 
+    // Creates one new message and initiates content update
     createOne(messageData) {
         const {user, date, content, attachment, fileTypes, status, type} = JSON.parse(messageData);
-
-        if (user && date && content && status && type) {
+        // Message can be empty - has only files!
+        if (user && date && status && type) {
             const newMessage = {
                 user,
                 date,
@@ -99,26 +103,33 @@ class MessagesService {
                 type,
             };
             this.messages.push(newMessage);
-            console.log('message added', this.messages);
+            if (attachment.length > 0) {
+                this.sendContentDataUpdate(this.getContentData());
+            }
             return newMessage;
         }
-
         return null;
     }
 
-    getContentInformation() {
+    // Scan messages and collect attachments information
+    getContentData() {
         const output = [];
         this.messages.filter((message) => message.attachment.length > 0)
             .forEach((message) => {
-               message.attachment.forEach((fileName, index) => {
-                   output.push({
-                       date: message.date,
-                       fileName: fileName,
-                       fileType: message.fileTypes[index],
-                   });
-               })
+                message.attachment.forEach((fileName, index) => {
+                    output.push({
+                        date: message.date,
+                        fileName: fileName,
+                        fileType: message.fileTypes[index],
+                    });
+                })
             });
         return output;
+    }
+    // Send data to SSE event emitter - used in Content Browser
+    sendContentDataUpdate(dataArray) {
+        const data = JSON.stringify(dataArray);
+        this.updateRouter.events.emit('update', data);
     }
 }
 

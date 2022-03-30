@@ -16,12 +16,16 @@ const MessagesRouter = require('./routers/messages-router');
 const FilesRouter = require('./routers/files-router');
 const SseRouter = require('./routers/sse-router');
 const WebSocketController = require("./routers/web-socket");
+const BotRouter = require('./routers/bot-router');
+const ContentUpdateRouter = require("./routers/content-update-router");
 
 // Create services and bind them to routers
-const messagesService = new MessagesService();
+const updateRouter = new ContentUpdateRouter(); // Used to send updates from message service
+const messagesService = new MessagesService(updateRouter);
 const messagesRouter = new MessagesRouter(messagesService);
 const filesRouter = new FilesRouter(messagesService);
 const sseRouter = new SseRouter(messagesService);
+const botRouter = new BotRouter();
 
 const app = new Koa(); // Server part
 
@@ -42,6 +46,8 @@ app.use(koaBody({
 app
     .use(filesRouter.router.routes())
     .use(sseRouter.router.routes())
+    .use(botRouter.router.routes())
+    .use(updateRouter.router.routes())
     .use(messagesRouter.router.routes());
 
 // Init server
