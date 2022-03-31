@@ -3,10 +3,10 @@ const { PassThrough } = require('stream');
 const EventEmitter = require('events');
 
 class ContentUpdateRouter {
-    constructor() {
+    constructor(cacheService) {
         this.router = new Router();
         this.events = new EventEmitter();
-        this.initialData = '';
+        this.cacheService = cacheService;
         this.events.setMaxListeners(0);
 
         // Send content information
@@ -28,10 +28,11 @@ class ContentUpdateRouter {
             ctx.status = 200;
             ctx.body = stream;
 
-            stream.write(`data:${this.initialData}\n\n`);
+            const initialData = this.cacheService.getContentDataCache();
+            stream.write(`data:${initialData}\n\n`);
 
-            const listener = (data) => {
-                console.log('update-sent');
+            const listener = () => {
+                const data = this.cacheService.getContentDataCache();
                 stream.write(`data:${data}\n\n`);
             }
 

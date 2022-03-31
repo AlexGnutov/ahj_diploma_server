@@ -1,11 +1,13 @@
 class MessagesService {
-    constructor(updateRouter) {
+    constructor(updateRouter, cacheService) {
         this.messages = [];
         this.updateRouter = updateRouter;
+        this.cacheService = cacheService;
         this.fillMessages();
-        this.updateRouter.initialData = JSON.stringify(this.getContentData());
+        this.cacheService.updateContentDataCache(this.getContentData());
     }
 
+    // Prepares 15 messages for testing
     fillMessages() {
         for (let i = 0; i <= 15; i += 1) {
             this.messages.push({
@@ -21,7 +23,7 @@ class MessagesService {
         }
     }
 
-    sortLaterThanDate(dateString) {
+    sortOlderThanDate(dateString) {
         const date = parseInt('' + dateString);
         return this.messages
             .filter((message) => message.date < date);
@@ -46,7 +48,7 @@ class MessagesService {
     }
 
     getPrevious(dateS, qty = '2') {
-        const previous = this.sortLaterThanDate(dateS);
+        const previous = this.sortOlderThanDate(dateS);
         if (previous.length === 0) {
             return [];
         }
@@ -84,8 +86,14 @@ class MessagesService {
     findByType(messageType) {
         return this.messages.filter((message) => message.type === messageType);
     }
-    findByContent(searchWord) {
+
+    // Search if message content matches search word
+    findByWordInContent(searchWord) {
         return this.messages.filter((message) => message.content.includes(searchWord));
+    }
+    // Search in message files
+    findByWordInFiles(searchWord) {
+        return this.messages.filter((message) => message.attachment.toString().includes(searchWord));
     }
 
     // Creates one new message and initiates content update
@@ -104,7 +112,7 @@ class MessagesService {
             };
             this.messages.push(newMessage);
             if (attachment.length > 0) {
-                this.sendContentDataUpdate(this.getContentData());
+                this.sendContentDataUpdate();
             }
             return newMessage;
         }
@@ -127,9 +135,9 @@ class MessagesService {
         return output;
     }
     // Send data to SSE event emitter - used in Content Browser
-    sendContentDataUpdate(dataArray) {
-        const data = JSON.stringify(dataArray);
-        this.updateRouter.events.emit('update', data);
+    sendContentDataUpdate() {
+        this.cacheService.updateContentDataCache(this.getContentData());
+        this.updateRouter.events.emit('update');
     }
 }
 

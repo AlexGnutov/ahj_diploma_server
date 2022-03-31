@@ -18,10 +18,13 @@ const SseRouter = require('./routers/sse-router');
 const WebSocketController = require("./routers/web-socket");
 const BotRouter = require('./routers/bot-router');
 const ContentUpdateRouter = require("./routers/content-update-router");
+const CacheService = require("./services/cache-service");
 
+// Create data cache
+const cacheService = new CacheService();
 // Create services and bind them to routers
-const updateRouter = new ContentUpdateRouter(); // Used to send updates from message service
-const messagesService = new MessagesService(updateRouter);
+const updateRouter = new ContentUpdateRouter(cacheService); // Used to send updates from message service
+const messagesService = new MessagesService(updateRouter, cacheService);
 const messagesRouter = new MessagesRouter(messagesService);
 const filesRouter = new FilesRouter(messagesService);
 const sseRouter = new SseRouter(messagesService);

@@ -35,6 +35,15 @@ class MessagesRouter {
             }
             ctx.response.body = [];
         })
+        // Search over messages
+        this.router.get('/api/messages/search', (ctx) => {
+            const { key } = ctx.request.query;
+            if (key) {
+                ctx.response.body = this.messagesService.findByWordInContent(key);
+            } else {
+                ctx.throw(400, 'No key word provided');
+            }
+        });
     }
 }
 
