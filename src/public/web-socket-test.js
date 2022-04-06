@@ -1,3 +1,5 @@
+
+/*
 window.onload = () => {
     // WEB SOCKETS init and operations
     let socket;
@@ -63,3 +65,4 @@ window.onload = () => {
         });
     })
 };
+*/
