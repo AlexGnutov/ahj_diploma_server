@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 class MessagesService {
     constructor(updateRouter, cacheService) {
         this.messages = [];
@@ -5,15 +7,23 @@ class MessagesService {
         this.cacheService = cacheService;
         this.fillMessages();
         this.cacheService.updateContentDataCache(this.getContentData());
+        this.fileTypeTransforms = [
+            ['audio', 'Аудио'],
+            ['video', 'Видео'],
+            ['text', 'Тексты'],
+            ['image', 'Картинки'],
+            ['pdf', 'PDF'],
+            ['msword', 'Тексты'],
+        ];
     }
 
     // Prepares 15 messages for testing
     fillMessages() {
         for (let i = 0; i <= 15; i += 1) {
             this.messages.push({
-                id: 5,
+                id: uuidv4(),
                 user: 'Robot',
-                date: 1643662840000 + 15000000 * i,
+                date: 1643662840000 + 25000000 * i,
                 content: `Hello Message ${i}`,
                 attachment: [],
                 fileTypes: [],
@@ -47,13 +57,13 @@ class MessagesService {
         return this.messages;
     }
 
-    getPrevious(dateS, qty = '2') {
+    getPrevious(dateS, qtyS = '2') {
         const previous = this.sortOlderThanDate(dateS);
         if (previous.length === 0) {
             return [];
         }
         const sorted = this.sortByDate(previous);
-        const quantity = parseInt('' + qty, 10);
+        const quantity = parseInt('' + qtyS, 10);
         if (sorted.length <= quantity) {
             return sorted;
         }
@@ -96,17 +106,34 @@ class MessagesService {
         return this.messages.filter((message) => message.attachment.toString().includes(searchWord));
     }
 
+    // Process file type
+    processContentDataTypes(array) {
+        const output = [];
+        array.forEach((x) => {
+            let newFileType = 'Другое';
+            this.fileTypeTransforms.forEach((type) => {
+                if (x.includes(type[0])) {
+                    [, newFileType] = type;
+                }
+            });
+            output.push(newFileType);
+        });
+        console.log(output);
+        return output;
+    }
+
     // Creates one new message and initiates content update
     createOne(messageData) {
         const {user, date, content, attachment, fileTypes, status, type} = JSON.parse(messageData);
-        // Message can be empty - has only files!
+        // Message can be empty (have only files)
         if (user && date && status && type) {
             const newMessage = {
+                id: uuidv4(),
                 user,
-                date,
+                date: parseInt('' + date, 10),
                 content,
                 attachment,
-                fileTypes,
+                fileTypes: this.processContentDataTypes(fileTypes),
                 status,
                 type,
             };
@@ -117,6 +144,16 @@ class MessagesService {
             return newMessage;
         }
         return null;
+    }
+
+    // Delete one message and initiates content update
+    deleteOne(messageId) {
+        const index = this.messages.findIndex((message) => message.id === messageId);
+        if (index >= 0) {
+            this.messages.splice(index, 1);
+            return true;
+        }
+        return false;
     }
 
     // Scan messages and collect attachments information

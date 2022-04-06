@@ -7,9 +7,9 @@ class MessagesRouter {
         this.messagesService = messagesService;
         this.router = new Router();
 
-        // Sends latest messages, default = 5 pcs.
+        // Sends latest messages, default = 10 pcs.
         this.router.get('/api/messages/latest', (ctx, next) => {
-            ctx.response.body = this.messagesService.getPrevious(Date.now(), '5');
+            ctx.response.body = this.messagesService.getPrevious(Date.now(), '10');
         });
 
         // Sends requested quantity of messages from defined position
@@ -43,6 +43,12 @@ class MessagesRouter {
             } else {
                 ctx.throw(400, 'No key word provided');
             }
+        });
+
+        // Delete one message
+        this.router.get('/api/messages/delete', async (ctx) => {
+            const { id } = ctx.request.query;
+            ctx.response.body = this.messagesService.deleteOne(id);
         });
     }
 }

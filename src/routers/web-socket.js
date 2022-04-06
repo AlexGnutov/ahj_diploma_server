@@ -13,9 +13,12 @@ class WebSocketController {
             ws.on('message', (bytes, isBinary) => {
                 const message = isBinary ? bytes : bytes.toString();
                 const data = JSON.parse(message);
-                console.log(data);
-                this.messagesService.createOne(data);
-                ws.send(data); // You don`t need to stringify!
+                const newMessage = this.messagesService.createOne(data);
+                if (newMessage) {
+                    this.wss.clients.forEach((client) => {
+                        client.send(JSON.stringify(newMessage)); // You don`t need to stringify!
+                    });
+                }
             });
             ws.on('close', () => {
                 console.log('connection closed');
